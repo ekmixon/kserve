@@ -102,14 +102,13 @@ class KFServer:
                 else:
                     raise RuntimeError("Model type should be KFModel")
         elif isinstance(models, dict):
-            if all([isinstance(v, Deployment) for v in models.values()]):
-                serve.start(detached=True, http_host='0.0.0.0', http_port=9071)
-                for key in models:
-                    models[key].deploy()
-                    handle = models[key].get_handle()
-                    self.register_model_handle(key, handle)
-            else:
+            if not all(isinstance(v, Deployment) for v in models.values()):
                 raise RuntimeError("Model type should be RayServe Deployment")
+            serve.start(detached=True, http_host='0.0.0.0', http_port=9071)
+            for key in models:
+                models[key].deploy()
+                handle = models[key].get_handle()
+                self.register_model_handle(key, handle)
         else:
             raise RuntimeError("Unknown model collection types")
 
@@ -163,15 +162,15 @@ class HealthHandler(tornado.web.RequestHandler):
         model = self.models.get_model(name)
         if model is None:
             raise tornado.web.HTTPError(
-                status_code=404,
-                reason="Model with name %s does not exist." % name
+                status_code=404, reason=f"Model with name {name} does not exist."
             )
+
 
         if not self.models.is_model_ready(name):
             raise tornado.web.HTTPError(
-                status_code=503,
-                reason="Model with name %s is not ready." % name
+                status_code=503, reason=f"Model with name {name} is not ready."
             )
+
 
         self.write(json.dumps({
             "name": model.name,
@@ -225,9 +224,9 @@ class UnloadHandler(tornado.web.RequestHandler):
             self.models.unload(name)
         except KeyError:
             raise tornado.web.HTTPError(
-                status_code=404,
-                reason="Model with name %s does not exist." % name
+                status_code=404, reason=f"Model with name {name} does not exist."
             )
+
         self.write(json.dumps({
             "name": name,
             "unload": True

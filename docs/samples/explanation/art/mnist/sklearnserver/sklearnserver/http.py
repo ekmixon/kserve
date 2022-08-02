@@ -27,15 +27,16 @@ class HTTPHandler(tornado.web.RequestHandler):
         if model is None:
             raise tornado.web.HTTPError(
                 status_code=HTTPStatus.NOT_FOUND,
-                reason="Model with name %s does not exist." % name
+                reason=f"Model with name {name} does not exist.",
             )
+
         if not model.ready:
             model.load()
         return model
 
     def validate(self, request):
         if ("instances" in request and not isinstance(request["instances"], list)) or \
-           ("inputs" in request and not isinstance(request["inputs"], list)):
+               ("inputs" in request and not isinstance(request["inputs"], list)):
             raise tornado.web.HTTPError(
                 status_code=HTTPStatus.BAD_REQUEST,
                 reason="Expected \"instances\" or \"inputs\" to be a list"
@@ -51,12 +52,13 @@ class PredictHandler(HTTPHandler):
         except json.decoder.JSONDecodeError as e:
             raise tornado.web.HTTPError(
                 status_code=HTTPStatus.BAD_REQUEST,
-                reason="Unrecognized request format: %s" % e
+                reason=f"Unrecognized request format: {e}",
             )
+
         request = model.preprocess(body)
         request = self.validate(request)
         response = (await model.predict(request)) if inspect.iscoroutinefunction(model.predict) \
-            else model.predict(request)
+                else model.predict(request)
         response = model.postprocess(response)
         self.write(response)
 
@@ -69,11 +71,12 @@ class ExplainHandler(HTTPHandler):
         except json.decoder.JSONDecodeError as e:
             raise tornado.web.HTTPError(
                 status_code=HTTPStatus.BAD_REQUEST,
-                reason="Unrecognized request format: %s" % e
+                reason=f"Unrecognized request format: {e}",
             )
+
         request = model.preprocess(body)
         request = self.validate(request)
         response = (await model.explain(request)) if inspect.iscoroutinefunction(model.explain) \
-            else model.explain(request)
+                else model.explain(request)
         response = model.postprocess(response)
         self.write(response)

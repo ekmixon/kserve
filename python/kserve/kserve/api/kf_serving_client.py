@@ -121,7 +121,7 @@ class KServeClient(object):
             return outputs
 
     def get(self, name=None, namespace=None, watch=False, timeout_seconds=600,
-            version=constants.KSERVE_V1BETA1_VERSION):  # pylint:disable=inconsistent-return-statements
+            version=constants.KSERVE_V1BETA1_VERSION):    # pylint:disable=inconsistent-return-statements
         """
         Get the inference service
         :param name: existing inference service name
@@ -153,21 +153,20 @@ class KServeClient(object):
                     raise RuntimeError(
                         "Exception when calling CustomObjectsApi->get_namespaced_custom_object:\
                         %s\n" % e)
+        elif watch:
+            isvc_watch(
+                namespace=namespace,
+                timeout_seconds=timeout_seconds)
         else:
-            if watch:
-                isvc_watch(
-                    namespace=namespace,
-                    timeout_seconds=timeout_seconds)
-            else:
-                try:
-                    return self.api_instance.list_namespaced_custom_object(
-                        constants.KSERVE_GROUP,
-                        version,
-                        namespace,
-                        constants.KSERVE_PLURAL)
-                except client.rest.ApiException as e:
-                    raise RuntimeError(
-                        "Exception when calling CustomObjectsApi->list_namespaced_custom_object:\
+            try:
+                return self.api_instance.list_namespaced_custom_object(
+                    constants.KSERVE_GROUP,
+                    version,
+                    namespace,
+                    constants.KSERVE_PLURAL)
+            except client.rest.ApiException as e:
+                raise RuntimeError(
+                    "Exception when calling CustomObjectsApi->list_namespaced_custom_object:\
                         %s\n" % e)
 
     def patch(self, name, inferenceservice, namespace=None, watch=False,

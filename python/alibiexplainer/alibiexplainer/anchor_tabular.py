@@ -53,6 +53,4 @@ class AnchorTabular(ExplainerWrapper):
                 self.predict_fn
             )
 
-        # We assume the input has batch dimension but Alibi explainers presently assume no batch
-        anchor_exp = self.anchors_tabular.explain(arr[0], **self.kwargs)
-        return anchor_exp
+        return self.anchors_tabular.explain(arr[0], **self.kwargs)

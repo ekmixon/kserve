@@ -27,7 +27,7 @@ class ARTModel(kserve.KFModel):  # pylint:disable=c-extension-no-member
         self.name = name
         self.predictor_host = predictor_host
         if str.lower(adversary_type) != "squareattack":
-            raise Exception("Invalid adversary type: %s" % adversary_type)
+            raise Exception(f"Invalid adversary type: {adversary_type}")
         self.adversary_type = adversary_type
         self.nb_classes = int(nb_classes)
         self.max_iter = int(max_iter)
@@ -46,7 +46,7 @@ class ARTModel(kserve.KFModel):  # pylint:disable=c-extension-no-member
         loop = asyncio.get_running_loop()
         resp = loop.run_until_complete(self.predict(scoring_data))
         prediction = np.array(resp["predictions"])
-        return [1 if x == prediction else 0 for x in range(0, self.nb_classes)]
+        return [1 if x == prediction else 0 for x in range(self.nb_classes)]
 
     def explain(self, request: Dict) -> Dict:
         image = request["instances"][0]
@@ -56,7 +56,9 @@ class ARTModel(kserve.KFModel):  # pylint:disable=c-extension-no-member
             logging.info("Calling explain on image of shape %s", (inputs.shape,))
         except Exception as e:
             raise Exception(
-                "Failed to initialize NumPy array from inputs: %s, %s" % (e, request["instances"]))
+                f'Failed to initialize NumPy array from inputs: {e}, {request["instances"]}'
+            )
+
         try:
             if str.lower(self.adversary_type) == "squareattack":
 
@@ -74,4 +76,4 @@ class ARTModel(kserve.KFModel):  # pylint:disable=c-extension-no-member
                 return {"explanations": {"adversarial_example": x_adv.tolist(), "L2 error": l2_error.tolist(),
                                          "adversarial_prediction": adv_preds.tolist(), "prediction": preds.tolist()}}
         except Exception as e:
-            raise Exception("Failed to explain %s" % e)
+            raise Exception(f"Failed to explain {e}")

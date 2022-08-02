@@ -42,14 +42,14 @@ class ImageTransformer(kserve.KFModel):
             bucket = inputs['Records'][0]['s3']['bucket']['name']
             key = inputs['Records'][0]['s3']['object']['key']
             self._key = key
-            client.download_file(bucket, key, '/tmp/' + key)
-            request = image_transform('/tmp/' + key)
+            client.download_file(bucket, key, f'/tmp/{key}')
+            request = image_transform(f'/tmp/{key}')
             return {"instances": [request]}
         raise Exception("unknown event")
 
     def postprocess(self, inputs: Dict) -> Dict:
         logging.info(inputs)
         index = inputs["predictions"][0]["classes"]
-        logging.info("digit:" + str(index))
-        client.upload_file('/tmp/' + self._key, 'digit-'+str(index), self._key)
+        logging.info(f"digit:{str(index)}")
+        client.upload_file(f'/tmp/{self._key}', f'digit-{str(index)}', self._key)
         return inputs

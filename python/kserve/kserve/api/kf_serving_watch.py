@@ -42,9 +42,7 @@ def isvc_watch(name=None, namespace=None, timeout_seconds=600):
     for event in stream:
         isvc = event['object']
         isvc_name = isvc['metadata']['name']
-        if name and name != isvc_name:
-            continue
-        else:
+        if not name or name == isvc_name:
             if isvc.get('status', ''):
                 url = isvc['status'].get('url', '')
                 traffic = isvc['status'].get('components', {}).get(
@@ -64,5 +62,5 @@ def isvc_watch(name=None, namespace=None, timeout_seconds=600):
                 time.sleep(2)
                 continue
 
-            if name == isvc_name and status == 'True':
-                break
+        if name == isvc_name and status == 'True':
+            break

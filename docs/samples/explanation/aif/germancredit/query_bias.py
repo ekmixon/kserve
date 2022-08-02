@@ -11,10 +11,7 @@ headers = {
     'Host': sys.argv[2]
 }
 
-payload_file = "input.json"
-if len(sys.argv) > 3:
-    payload_file = sys.argv[3]
-
+payload_file = sys.argv[3] if len(sys.argv) > 3 else "input.json"
 with open(payload_file) as file:
     payload = json.load(file)
 

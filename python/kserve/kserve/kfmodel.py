@@ -71,13 +71,14 @@ class KFModel:
 
     @staticmethod
     def validate(request):
-        if isinstance(request, dict):
-            if ("instances" in request and not isinstance(request["instances"], list)) or \
-               ("inputs" in request and not isinstance(request["inputs"], list)):
-                raise tornado.web.HTTPError(
-                    status_code=HTTPStatus.BAD_REQUEST,
-                    reason="Expected \"instances\" or \"inputs\" to be a list"
-                )
+        if isinstance(request, dict) and (
+            ("instances" in request and not isinstance(request["instances"], list))
+            or ("inputs" in request and not isinstance(request["inputs"], list))
+        ):
+            raise tornado.web.HTTPError(
+                status_code=HTTPStatus.BAD_REQUEST,
+                reason="Expected \"instances\" or \"inputs\" to be a list"
+            )
         return request
 
     def load(self) -> bool:
@@ -105,23 +106,24 @@ class KFModel:
                     response = json.loads(response.decode('UTF-8'))
                 except (json.decoder.JSONDecodeError, UnicodeDecodeError) as e:
                     attributes = request._attributes
-                    if "content-type" in attributes:
-                        if attributes["content-type"] == "application/cloudevents+json" or \
-                           attributes["content-type"] == "application/json":
-                            raise tornado.web.HTTPError(
-                                status_code=HTTPStatus.BAD_REQUEST,
-                                reason="Unrecognized request format: %s" % e
-                            )
+                    if "content-type" in attributes and attributes[
+                        "content-type"
+                    ] in ["application/cloudevents+json", "application/json"]:
+                        raise tornado.web.HTTPError(
+                            status_code=HTTPStatus.BAD_REQUEST,
+                            reason=f"Unrecognized request format: {e}",
+                        )
+
         elif isinstance(request, ServeRequest):
             return await request.body()
         elif isinstance(request, dict):
 
             if "time" in request \
-                    and "type" in request \
-                    and "source" in request \
-                    and "id" in request \
-                    and "specversion" in request \
-                    and "data" in request:
+                        and "type" in request \
+                        and "source" in request \
+                        and "id" in request \
+                        and "specversion" in request \
+                        and "data" in request:
                 response = request["data"]
 
         return response

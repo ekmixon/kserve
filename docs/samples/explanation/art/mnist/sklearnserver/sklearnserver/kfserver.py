@@ -127,15 +127,15 @@ class HealthHandler(tornado.web.RequestHandler):
         model = self.models.get_model(name)
         if model is None:
             raise tornado.web.HTTPError(
-                status_code=404,
-                reason="Model with name %s does not exist." % name
+                status_code=404, reason=f"Model with name {name} does not exist."
             )
+
 
         if not model.ready:
             raise tornado.web.HTTPError(
-                status_code=503,
-                reason="Model with name %s is not ready." % name
+                status_code=503, reason=f"Model with name {name} is not ready."
             )
+
 
         self.write(json.dumps({
             "name": model.name,
@@ -186,9 +186,9 @@ class UnloadHandler(tornado.web.RequestHandler):
             self.models.unload(name)
         except KeyError:
             raise tornado.web.HTTPError(
-                status_code=404,
-                reason="Model with name %s does not exist." % name
+                status_code=404, reason=f"Model with name {name} does not exist."
             )
+
         self.write(json.dumps({
             "name": name,
             "unload": True

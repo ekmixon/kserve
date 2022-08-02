@@ -20,13 +20,13 @@ x = X_test_h
 n_samples = len(x)
 X_test_2 = x.reshape((n_samples, -1))
 
-y_train_2 = [0 for x in range(0, len(y_train_h))]
-y_test_2 = [0 for x in range(0, len(y_test_h))]
+y_train_2 = [0 for _ in range(len(y_train_h))]
+y_test_2 = [0 for _ in range(len(y_test_h))]
 
-for label_iter in range(0, len(y_train_h)):
+for label_iter in range(len(y_train_h)):
     y_train_2[label_iter] = y_train_h[label_iter].argmax()
 
-for label_iter in range(0, len(y_test_h)):
+for label_iter in range(len(y_test_h)):
     y_test_2[label_iter] = y_test_h[label_iter].argmax()
 
 print(data.test_data.shape)

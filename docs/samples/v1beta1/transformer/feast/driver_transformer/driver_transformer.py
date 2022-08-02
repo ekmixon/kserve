@@ -71,11 +71,10 @@ class DriverTransformer(kserve.KFModel):
             Dict: Returns the entity id attributes as an entity row
 
         """
-        entity_rows = {}
-        for i in range(len(self.entity_ids)):
-            entity_rows[self.entity_ids[i]] = [instance[i] for instance in inputs['instances']]
-
-        return entity_rows
+        return {
+            self.entity_ids[i]: [instance[i] for instance in inputs['instances']]
+            for i in range(len(self.entity_ids))
+        }
 
     def buildPredictRequest(self, inputs, features) -> Dict:
         """Build the predict request for all entitys and return it as a dict.

@@ -48,7 +48,7 @@ else:
     inputs = gray2rgb(inputs.reshape((-1, 28, 28)))
     inputs = np.reshape(inputs, (28, 28, 3))
 input_image = {"instances": [inputs.tolist()]}
-input_image.update(parameters)
+input_image |= parameters
 print("Sending Explain Query")
 
 x = time.time()
@@ -72,6 +72,6 @@ for i, c_ax in enumerate(m_axs.flatten()):
         continue
     mask = masks[i]
     c_ax.imshow(label2rgb(mask, temp, bg_label=0), interpolation='nearest')
-    c_ax.set_title('Positive for {}\nActual {}'.format(top_labels[i], actual))
+    c_ax.set_title(f'Positive for {top_labels[i]}\nActual {actual}')
     c_ax.axis('off')
 plt.show()

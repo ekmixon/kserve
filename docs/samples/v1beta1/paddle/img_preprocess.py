@@ -7,8 +7,7 @@ def resize_short(img, target_size):
     percent = float(target_size) / min(img.shape[0], img.shape[1])
     resized_width = int(round(img.shape[1] * percent))
     resized_height = int(round(img.shape[0] * percent))
-    resized = cv2.resize(img, (resized_width, resized_height))
-    return resized
+    return cv2.resize(img, (resized_width, resized_height))
 
 
 def crop_image(img, target_size, center):

@@ -58,5 +58,4 @@ class AnchorText(ExplainerWrapper):
         else:
             self.anchors_text.predictor = ArgmaxTransformer(self.predict_fn)
 
-        anchor_exp = self.anchors_text.explain(input_words, **self.kwargs)
-        return anchor_exp
+        return self.anchors_text.explain(input_words, **self.kwargs)

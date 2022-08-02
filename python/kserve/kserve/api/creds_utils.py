@@ -55,7 +55,7 @@ def set_gcs_credentials(namespace, credentials_file, service_account):
 def set_s3_credentials(namespace, credentials_file, service_account,
                        s3_profile='default',  # pylint: disable=too-many-locals,too-many-arguments
                        s3_endpoint=None, s3_region=None, s3_use_https=None,
-                       s3_verify_ssl=None, s3_cabundle=None):  # pylint: disable=unused-argument
+                       s3_verify_ssl=None, s3_cabundle=None):    # pylint: disable=unused-argument
     """
     Set S3 Credentails (secret and service account).
     Args:
@@ -95,18 +95,19 @@ def set_s3_credentials(namespace, credentials_file, service_account,
     }
 
     s3_cred_sets = {
-        's3_endpoint': constants.KSERVE_GROUP + "/s3-endpoint",
-        's3_region': constants.KSERVE_GROUP + "/s3-region",
-        's3_use_https': constants.KSERVE_GROUP + "/s3-usehttps",
-        's3_verify_ssl': constants.KSERVE_GROUP + "/s3-verifyssl",
-        's3_cabundle': constants.KSERVE_GROUP + "/s3-cabundle",
+        's3_endpoint': f"{constants.KSERVE_GROUP}/s3-endpoint",
+        's3_region': f"{constants.KSERVE_GROUP}/s3-region",
+        's3_use_https': f"{constants.KSERVE_GROUP}/s3-usehttps",
+        's3_verify_ssl': f"{constants.KSERVE_GROUP}/s3-verifyssl",
+        's3_cabundle': f"{constants.KSERVE_GROUP}/s3-cabundle",
     }
+
 
     s3_annotations = {}
     for key, value in s3_cred_sets.items():
         arg = vars()[key]
         if arg is not None:
-            s3_annotations.update({value: arg})
+            s3_annotations[value] = arg
 
     secret_name = create_secret(
         namespace=namespace, annotations=s3_annotations, data=data)
@@ -189,10 +190,7 @@ def check_sa_exists(namespace, service_account):
 
     sa_name_list = [sa.metadata.name for sa in sa_list.items]
 
-    if service_account in sa_name_list:
-        return True
-
-    return False
+    return service_account in sa_name_list
 
 
 def create_service_account(secret_name, namespace, sa_name):

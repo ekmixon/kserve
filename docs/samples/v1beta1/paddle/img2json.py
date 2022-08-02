@@ -16,6 +16,6 @@ img = preprocess(cv2.imread(input_file))
 
 request = {"instances": img.tolist()}
 
-output_file = os.path.splitext(input_file)[0] + '.json'
+output_file = f'{os.path.splitext(input_file)[0]}.json'
 with open(output_file, 'w') as out:
     json.dump(request, out)

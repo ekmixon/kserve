@@ -25,9 +25,7 @@ def convert_doc_tokens(paragraph_text):
 
     """ Return the list of tokens from the doc text """
     def is_whitespace(c):
-        if c == " " or c == "\t" or c == "\r" or c == "\n" or ord(c) == 0x202F:
-            return True
-        return False
+        return c == " " or c == "\t" or c == "\r" or c == "\n" or ord(c) == 0x202F
 
     doc_tokens = []
     prev_is_whitespace = True
@@ -88,7 +86,7 @@ def convert_examples_to_features(doc_tokens, question_text, tokenizer, max_seq_l
     query_tokens = tokenizer.tokenize(question_text)
 
     if len(query_tokens) > max_query_length:
-        query_tokens = query_tokens[0:max_query_length]
+        query_tokens = query_tokens[:max_query_length]
 
     tok_to_orig_index = []
     orig_to_tok_index = []
@@ -289,10 +287,7 @@ def _compute_softmax(scores):
         exp_scores.append(x)
         total_sum += x
 
-    probs = []
-    for score in exp_scores:
-        probs.append(score / total_sum)
-    return probs
+    return [score / total_sum for score in exp_scores]
 
 
 def get_predictions(doc_tokens, features, start_logits, end_logits, n_best_size, max_answer_length):
@@ -394,11 +389,9 @@ def get_predictions(doc_tokens, features, start_logits, end_logits, n_best_size,
             if final_text in seen_predictions:
                 continue
 
-            seen_predictions[final_text] = True
         else:
             final_text = ""
-            seen_predictions[final_text] = True
-
+        seen_predictions[final_text] = True
         nbest.append(
             _NbestPrediction(
                 text=final_text,
@@ -406,27 +399,25 @@ def get_predictions(doc_tokens, features, start_logits, end_logits, n_best_size,
                 end_logit=pred.end_logit))
 
     # if we didn't inlude the empty option in the n-best, inlcude it
-    if version_2_with_negative:
-        if "" not in seen_predictions:
-            nbest.append(
-                _NbestPrediction(
-                    text="", start_logit=null_start_logit,
-                    end_logit=null_end_logit))
+    if version_2_with_negative and "" not in seen_predictions:
+        nbest.append(
+            _NbestPrediction(
+                text="", start_logit=null_start_logit,
+                end_logit=null_end_logit))
     # In very rare edge cases we could have no valid predictions. So we
     # just create a nonce prediction in this case to avoid failure.
     if not nbest:
         nbest.append(
             _NbestPrediction(text="empty", start_logit=0.0, end_logit=0.0))
 
-    assert len(nbest) >= 1
+    assert nbest
 
     total_scores = []
     best_non_null_entry = None
     for entry in nbest:
         total_scores.append(entry.start_logit + entry.end_logit)
-        if not best_non_null_entry:
-            if entry.text:
-                best_non_null_entry = entry
+        if not best_non_null_entry and entry.text:
+            best_non_null_entry = entry
 
     probs = _compute_softmax(total_scores)
 
@@ -439,9 +430,8 @@ def get_predictions(doc_tokens, features, start_logits, end_logits, n_best_size,
         output["end_logit"] = entry.end_logit
         nbest_json.append(output)
 
-    assert len(nbest_json) >= 1
+    assert nbest_json
 
-    null_score_diff_threshold = 0.0
     if not version_2_with_negative:
         prediction = nbest_json[0]["text"]
     else:
@@ -449,7 +439,8 @@ def get_predictions(doc_tokens, features, start_logits, end_logits, n_best_size,
         score_diff = score_null - best_non_null_entry.start_logit - (
             best_non_null_entry.end_logit)
         scores_diff_json = score_diff
-        if score_diff > null_score_diff_threshold:
+        null_score_diff_threshold = 0.0
+        if scores_diff_json > null_score_diff_threshold:
             prediction = ""
         else:
             prediction = best_non_null_entry.text

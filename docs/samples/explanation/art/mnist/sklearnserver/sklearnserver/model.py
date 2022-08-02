@@ -45,9 +45,11 @@ class SKLearnModel(kserve.KFModel):  # pylint:disable=c-extension-no-member
             inputs = np.array(instances)
         except Exception as e:
             raise Exception(
-                "Failed to initialize NumPy array from inputs: %s, %s" % (e, instances))
+                f"Failed to initialize NumPy array from inputs: {e}, {instances}"
+            )
+
         try:
             result = self._model.predict(inputs).tolist()
             return {"predictions": result}
         except Exception as e:
-            raise Exception("Failed to predict %s" % e)
+            raise Exception(f"Failed to predict {e}")

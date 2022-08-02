@@ -32,7 +32,7 @@ class AIXModel(kserve.KFModel):  # pylint:disable=c-extension-no-member
         self.min_weight = float(min_weight)
         self.positive_only = (positive_only.lower() == "true") | (positive_only.lower() == "t")
         if str.lower(explainer_type) != "limeimages":
-            raise Exception("Invalid explainer type: %s" % explainer_type)
+            raise Exception(f"Invalid explainer type: {explainer_type}")
         self.explainer_type = explainer_type
         self.ready = False
 
@@ -73,7 +73,9 @@ class AIXModel(kserve.KFModel):  # pylint:disable=c-extension-no-member
             logging.info("Calling explain on image of shape %s", (inputs.shape,))
         except Exception as err:
             raise Exception(
-                "Failed to initialize NumPy array from inputs: %s, %s" % (err, instances))
+                f"Failed to initialize NumPy array from inputs: {err}, {instances}"
+            )
+
         try:
             if str.lower(self.explainer_type) == "limeimages":
                 explainer = LimeImageExplainer(verbose=False)
@@ -88,7 +90,7 @@ class AIXModel(kserve.KFModel):  # pylint:disable=c-extension-no-member
 
                 temp = []
                 masks = []
-                for i in range(0, top_labels):
+                for i in range(top_labels):
                     temp, mask = explanation.get_image_and_mask(explanation.top_labels[i],
                                                                 positive_only=positive_only,
                                                                 num_features=10,
@@ -103,4 +105,4 @@ class AIXModel(kserve.KFModel):  # pylint:disable=c-extension-no-member
                 }}
 
         except Exception as err:
-            raise Exception("Failed to explain %s" % err)
+            raise Exception(f"Failed to explain {err}")

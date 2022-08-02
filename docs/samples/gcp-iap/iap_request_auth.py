@@ -37,19 +37,18 @@ def getToken(iap_client_id, desktop_client_id, desktop_client_secret):
     token = None
     if desktop_client_id is None or desktop_client_secret is None:
         raise ValueError('desktop client id or secret is empty')
-    else:
-        # fetch IAP auth token: user account
-        # Obtain the ID token for provided Client ID with user accounts.
-        #  Flow: get authorization code ->
-        #        exchange for refresh token ->
-        #        obtain and return ID token
-        refresh_token = getRefreshTokenFromClientId(desktop_client_id,
-                                                    desktop_client_secret)
+    # fetch IAP auth token: user account
+    # Obtain the ID token for provided Client ID with user accounts.
+    #  Flow: get authorization code ->
+    #        exchange for refresh token ->
+    #        obtain and return ID token
+    refresh_token = getRefreshTokenFromClientId(desktop_client_id,
+                                                desktop_client_secret)
 
-        token = idTokenFromRefreshToken(desktop_client_id,
-                                        desktop_client_secret,
-                                        refresh_token,
-                                        iap_client_id)
+    token = idTokenFromRefreshToken(desktop_client_id,
+                                    desktop_client_secret,
+                                    refresh_token,
+                                    iap_client_id)
     return token
 
 
@@ -104,20 +103,21 @@ def makeRequest(url, input_file, user_account, id_token):
             verify=False,
             data=data,
             headers={
-                'Authorization': 'Bearer {}'.format(id_token),
-                'x-goog-authenticated-user-email': 'accounts.google.com:{}'
-                .format(user_account)
-            })
+                'Authorization': f'Bearer {id_token}',
+                'x-goog-authenticated-user-email': f'accounts.google.com:{user_account}',
+            },
+        )
+
     else:
         resp = requests.get(
-            url,
-            verify=False,
-            headers={'Authorization': 'Bearer {}'.format(id_token)})
+            url, verify=False, headers={'Authorization': f'Bearer {id_token}'}
+        )
+
     if resp.status_code == 403:
         raise Exception(
-            'Service account {} does not have permission to '
-            'access the IAP-protected application.'
-            .format("var signer_email"))
+            'Service account var signer_email does not have permission to access the IAP-protected application.'
+        )
+
     elif resp.status_code != 200:
         raise Exception('Bad response from application: {!r} / {!r} / {!r}'
                         .format(resp.status_code, resp.headers, resp.text))

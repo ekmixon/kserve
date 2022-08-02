@@ -17,9 +17,8 @@ def predict(X, name, ds, svc_hostname, cluster_ip):
     res = requests.post('http://' + cluster_ip + '/v1/models/' + name + ':predict', json=formData, headers=headers)
     if res.status_code == 200:
         return ds.target_names[np.array(res.json()["predictions"])[0]]
-    else:
-        print("Failed with ", res.status_code)
-        return []
+    print("Failed with ", res.status_code)
+    return []
 
 
 def explain(X, name, svc_hostname, cluster_ip):
@@ -30,9 +29,8 @@ def explain(X, name, svc_hostname, cluster_ip):
     res = requests.post('http://' + cluster_ip + '/v1/models/' + name + ':explain', json=formData, headers=headers)
     if res.status_code == 200:
         return res.json()
-    else:
-        print("Failed with ", res.status_code)
-        return []
+    print("Failed with ", res.status_code)
+    return []
 
 
 def show_bar(X, labels, title):
@@ -46,9 +44,11 @@ def show_bar(X, labels, title):
 
 
 def show_feature_coverage(exp):
-    data = []
-    for idx, name in enumerate(exp["anchor"]):
-        data.append(go.Bar(name=name, x=["coverage"], y=[exp['raw']['coverage'][idx]]))
+    data = [
+        go.Bar(name=name, x=["coverage"], y=[exp['raw']['coverage'][idx]])
+        for idx, name in enumerate(exp["anchor"])
+    ]
+
     fig = go.Figure(data=data)
     fig.update_layout(yaxis=dict(range=[0, 1]))
     fig.show()
@@ -56,16 +56,26 @@ def show_feature_coverage(exp):
 
 def show_anchors(names):
     display(Markdown('# Explanation:'))
-    display(Markdown('## {}'.format(names)))
+    display(Markdown(f'## {names}'))
 
 
 def show_examples(exp, fidx, ds, covered=True):
     if covered:
         cname = 'covered_true'
-        display(Markdown("## Examples covered by Anchors: {}".format(exp['anchor'][0:fidx + 1])))
+        display(
+            Markdown(
+                f"## Examples covered by Anchors: {exp['anchor'][:fidx + 1]}"
+            )
+        )
+
     else:
         cname = 'covered_false'
-        display(Markdown("## Examples not covered by Anchors: {}".format(exp['anchor'][0:fidx + 1])))
+        display(
+            Markdown(
+                f"## Examples not covered by Anchors: {exp['anchor'][:fidx + 1]}"
+            )
+        )
+
     if "feature_names" in ds:
         return pd.DataFrame(exp['raw']['examples'][fidx][cname], columns=ds.feature_names)
     else:
@@ -73,7 +83,7 @@ def show_examples(exp, fidx, ds, covered=True):
 
 
 def show_prediction(prediction):
-    display(Markdown('## Prediction: {}'.format(prediction)))
+    display(Markdown(f'## Prediction: {prediction}'))
 
 
 def show_row(X, ds):

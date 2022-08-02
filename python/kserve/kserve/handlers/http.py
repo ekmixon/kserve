@@ -34,8 +34,9 @@ class HTTPHandler(tornado.web.RequestHandler):
         if model is None:
             raise tornado.web.HTTPError(
                 status_code=HTTPStatus.NOT_FOUND,
-                reason="Model with name %s does not exist." % name
+                reason=f"Model with name {name} does not exist.",
             )
+
         if not self.models.is_model_ready(name):
             model.load()
         return model
@@ -54,16 +55,18 @@ class PredictHandler(HTTPHandler):
                     ce.InvalidHeadersFormat, ce.DataMarshallerError, ce.DataUnmarshallerError) as e:
                 raise tornado.web.HTTPError(
                     status_code=HTTPStatus.BAD_REQUEST,
-                    reason="Cloud Event Exceptions: %s" % e
+                    reason=f"Cloud Event Exceptions: {e}",
                 )
+
         else:
             try:
                 body = json.loads(self.request.body)
             except json.decoder.JSONDecodeError as e:
                 raise tornado.web.HTTPError(
                     status_code=HTTPStatus.BAD_REQUEST,
-                    reason="Unrecognized request format: %s" % e
+                    reason=f"Unrecognized request format: {e}",
                 )
+
         # call model locally or remote model workers
         model = self.get_model(name)
         if not isinstance(model, RayServeHandle):
@@ -96,8 +99,9 @@ class ExplainHandler(HTTPHandler):
         except json.decoder.JSONDecodeError as e:
             raise tornado.web.HTTPError(
                 status_code=HTTPStatus.BAD_REQUEST,
-                reason="Unrecognized request format: %s" % e
+                reason=f"Unrecognized request format: {e}",
             )
+
         # call model locally or remote model workers
         model = self.get_model(name)
         if not isinstance(model, RayServeHandle):

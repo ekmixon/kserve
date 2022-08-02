@@ -51,10 +51,7 @@ class Storage(object):  # pylint: disable=too-few-public-methods
     def download(uri: str, out_dir: str = None) -> str:
         logging.info("Copying contents of %s to local", uri)
 
-        is_local = False
-        if uri.startswith(_LOCAL_PREFIX) or os.path.exists(uri):
-            is_local = True
-
+        is_local = bool(uri.startswith(_LOCAL_PREFIX) or os.path.exists(uri))
         if out_dir is None:
             if is_local:
                 # noop if out_dir is not set and the path is local
@@ -78,9 +75,14 @@ class Storage(object):  # pylint: disable=too-few-public-methods
             # serving mode. The model agent will download models.
             return out_dir
         else:
-            raise Exception("Cannot recognize storage type for " + uri +
-                            "\n'%s', '%s', '%s', and '%s' are the current available storage type." %
-                            (_GCS_PREFIX, _S3_PREFIX, _LOCAL_PREFIX, _HTTP_PREFIX))
+            raise Exception(
+                (
+                    f"Cannot recognize storage type for {uri}"
+                    + "\n'%s', '%s', '%s', and '%s' are the current available storage type."
+                    % (_GCS_PREFIX, _S3_PREFIX, _LOCAL_PREFIX, _HTTP_PREFIX)
+                )
+            )
+
 
         logging.info("Successfully copied %s to %s", uri, out_dir)
         return out_dir
@@ -88,11 +90,8 @@ class Storage(object):  # pylint: disable=too-few-public-methods
     @staticmethod
     def get_S3_config():
         # anon environment variable defined in s3_secret.go
-        anon = ("True" == os.getenv("awsAnonymousCredential", "false").capitalize())
-        if anon:
-            return Config(signature_version=UNSIGNED)
-        else:
-            return None
+        anon = os.getenv("awsAnonymousCredential", "false").capitalize() == "True"
+        return Config(signature_version=UNSIGNED) if anon else None
 
     @staticmethod
     def _download_s3(uri, temp_dir: str):
@@ -138,11 +137,10 @@ class Storage(object):  # pylint: disable=too-few-public-methods
             if not os.path.exists(os.path.dirname(target)):
                 os.makedirs(os.path.dirname(target), exist_ok=True)
             bucket.download_file(obj.key, target)
-            logging.info('Downloaded object %s to %s' % (obj.key, target))
+            logging.info(f'Downloaded object {obj.key} to {target}')
             count = count + 1
         if count == 0:
-            raise RuntimeError(
-                "Failed to fetch model. No model found in %s." % bucket_path)
+            raise RuntimeError(f"Failed to fetch model. No model found in {bucket_path}.")
 
         # Unpack compressed file, supports .tgz, tar.gz and zip file formats.
         if count == 1:
@@ -162,7 +160,7 @@ class Storage(object):  # pylint: disable=too-few-public-methods
         bucket = storage_client.bucket(bucket_name)
         prefix = bucket_path
         if not prefix.endswith("/"):
-            prefix = prefix + "/"
+            prefix = f"{prefix}/"
         blobs = bucket.list_blobs(prefix=prefix)
         count = 0
         for blob in blobs:
@@ -180,8 +178,7 @@ class Storage(object):  # pylint: disable=too-few-public-methods
                 blob.download_to_filename(dest_path)
             count = count + 1
         if count == 0:
-            raise RuntimeError(
-                "Failed to fetch model. No model found in %s." % uri)
+            raise RuntimeError(f"Failed to fetch model. No model found in {uri}.")
 
         # Unpack compressed file, supports .tgz, tar.gz and zip file formats.
         if count == 1:
@@ -192,9 +189,9 @@ class Storage(object):  # pylint: disable=too-few-public-methods
     @staticmethod
     def _download_blob(uri, out_dir: str):  # pylint: disable=too-many-locals
         match = re.search(_BLOB_RE, uri)
-        account_url = re.search(_ACCOUNT_RE, uri).group(0)
-        account_name = match.group(1)
-        storage_url = match.group(2)
+        account_url = re.search(_ACCOUNT_RE, uri)[0]
+        account_name = match[1]
+        storage_url = match[2]
         container_name, prefix = storage_url.split("/", 1)
 
         logging.info("Connecting to BLOB account: [%s], container: [%s], prefix: [%s]",
@@ -230,8 +227,7 @@ class Storage(object):  # pylint: disable=too-few-public-methods
                 f.write(downloader.readall())
             count = count + 1
         if count == 0:
-            raise RuntimeError(
-                "Failed to fetch model. No model found in %s." % (uri))
+            raise RuntimeError(f"Failed to fetch model. No model found in {uri}.")
 
         # Unpack compressed file, supports .tgz, tar.gz and zip file formats.
         if count == 1:
@@ -262,7 +258,7 @@ class Storage(object):  # pylint: disable=too-few-public-methods
     def _download_local(uri, out_dir=None):
         local_path = uri.replace(_LOCAL_PREFIX, "", 1)
         if not os.path.exists(local_path):
-            raise RuntimeError("Local path %s does not exist." % (uri))
+            raise RuntimeError(f"Local path {uri} does not exist.")
 
         if out_dir is None:
             return local_path
@@ -280,8 +276,7 @@ class Storage(object):  # pylint: disable=too-few-public-methods
             os.symlink(src, dest_path)
             count = count + 1
         if count == 0:
-            raise RuntimeError(
-                "Failed to fetch model. No model found in %s." % (uri))
+            raise RuntimeError(f"Failed to fetch model. No model found in {uri}.")
         # Unpack compressed file, supports .tgz, tar.gz and zip file formats.
         if count == 1:
             mimetype, _ = mimetypes.guess_type(dest_path)
@@ -298,7 +293,7 @@ class Storage(object):  # pylint: disable=too-few-public-methods
         local_path = os.path.join(out_dir, filename)
 
         if filename == '':
-            raise ValueError('No filename contained in URI: %s' % (uri))
+            raise ValueError(f'No filename contained in URI: {uri}')
 
         # Get header information from host url
         headers = {}
@@ -309,19 +304,26 @@ class Storage(object):  # pylint: disable=too-few-public-methods
 
         with requests.get(uri, stream=True, headers=headers) as response:
             if response.status_code != 200:
-                raise RuntimeError("URI: %s returned a %s response code." % (uri, response.status_code))
+                raise RuntimeError(
+                    f"URI: {uri} returned a {response.status_code} response code."
+                )
+
             zip_content_types = ('application/x-zip-compressed', 'application/zip', 'application/zip-compressed')
             if mimetype == 'application/zip' and not response.headers.get('Content-Type', '')\
-                    .startswith(zip_content_types):
+                        .startswith(zip_content_types):
                 raise RuntimeError("URI: %s did not respond with any of following \'Content-Type\': " % uri +
                                    ", ".join(zip_content_types))
             tar_content_types = ('application/x-tar', 'application/x-gtar', 'application/x-gzip', 'application/gzip')
             if mimetype == 'application/x-tar' and not response.headers.get('Content-Type', '')\
-                    .startswith(tar_content_types):
+                        .startswith(tar_content_types):
                 raise RuntimeError("URI: %s did not respond with any of following \'Content-Type\': " % uri +
                                    ", ".join(tar_content_types))
-            if (mimetype != 'application/zip' and mimetype != 'application/x-tar') and \
-                    not response.headers.get('Content-Type', '').startswith('application/octet-stream'):
+            if mimetype not in [
+                'application/zip',
+                'application/x-tar',
+            ] and not response.headers.get('Content-Type', '').startswith(
+                'application/octet-stream'
+            ):
                 raise RuntimeError("URI: %s did not respond with \'Content-Type\': \'application/octet-stream\'"
                                    % uri)
 

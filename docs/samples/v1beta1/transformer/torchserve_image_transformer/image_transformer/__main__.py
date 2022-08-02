@@ -48,11 +48,8 @@ def parse_config():
     keys["model_snapshot"] = json.loads(keys["model_snapshot"])
 
     models = keys["model_snapshot"]["models"]
-    model_names = []
+    model_names = [model for model, value in models.items()]
 
-    # Get all the model_names
-    for model, value in models.items():
-        model_names.append(model)
     if not model_names:
         model_names = [DEFAULT_MODEL_NAME]
     print(f"Wrapper : Model names {model_names}")

@@ -36,4 +36,4 @@ def kfservingPipeline(
 
 
 if __name__ == '__main__':
-    compiler.Compiler().compile(kfservingPipeline, __file__ + '.tar.gz')
+    compiler.Compiler().compile(kfservingPipeline, f'{__file__}.tar.gz')

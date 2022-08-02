@@ -169,7 +169,7 @@ class ApiClient(object):
 
         # post parameters
         if post_params or files:
-            post_params = post_params if post_params else []
+            post_params = post_params or []
             post_params = self.sanitize_for_serialization(post_params)
             post_params = self.parameters_to_tuples(post_params,
                                                     collection_formats)
@@ -305,12 +305,12 @@ class ApiClient(object):
 
         if type(klass) == str:
             if klass.startswith('list['):
-                sub_kls = re.match(r'list\[(.*)\]', klass).group(1)
+                sub_kls = re.match(r'list\[(.*)\]', klass)[1]
                 return [self.__deserialize(sub_data, sub_kls)
                         for sub_data in data]
 
             if klass.startswith('dict('):
-                sub_kls = re.match(r'dict\(([^,]*), (.*)\)', klass).group(2)
+                sub_kls = re.match(r'dict\(([^,]*), (.*)\)', klass)[2]
                 return {k: self.__deserialize(v, sub_kls)
                         for k, v in six.iteritems(data)}
 
@@ -373,26 +373,46 @@ class ApiClient(object):
             If parameter async_req is False or missing,
             then the method will return the response directly.
         """
-        if not async_req:
-            return self.__call_api(resource_path, method,
-                                   path_params, query_params, header_params,
-                                   body, post_params, files,
-                                   response_type, auth_settings,
-                                   _return_http_data_only, collection_formats,
-                                   _preload_content, _request_timeout, _host)
-
-        return self.pool.apply_async(self.__call_api, (resource_path,
-                                                       method, path_params,
-                                                       query_params,
-                                                       header_params, body,
-                                                       post_params, files,
-                                                       response_type,
-                                                       auth_settings,
-                                                       _return_http_data_only,
-                                                       collection_formats,
-                                                       _preload_content,
-                                                       _request_timeout,
-                                                       _host))
+        return (
+            self.pool.apply_async(
+                self.__call_api,
+                (
+                    resource_path,
+                    method,
+                    path_params,
+                    query_params,
+                    header_params,
+                    body,
+                    post_params,
+                    files,
+                    response_type,
+                    auth_settings,
+                    _return_http_data_only,
+                    collection_formats,
+                    _preload_content,
+                    _request_timeout,
+                    _host,
+                ),
+            )
+            if async_req
+            else self.__call_api(
+                resource_path,
+                method,
+                path_params,
+                query_params,
+                header_params,
+                body,
+                post_params,
+                files,
+                response_type,
+                auth_settings,
+                _return_http_data_only,
+                collection_formats,
+                _preload_content,
+                _request_timeout,
+                _host,
+            )
+        )
 
     def request(self, method, url, query_params=None, headers=None,
                 post_params=None, body=None, _preload_content=True,
@@ -502,8 +522,7 @@ class ApiClient(object):
                         filedata = f.read()
                         mimetype = (mimetypes.guess_type(filename)[0] or
                                     'application/octet-stream')
-                        params.append(
-                            tuple([k, tuple([filename, filedata, mimetype])]))
+                        params.append((k, (filename, filedata, mimetype)))
 
         return params
 
@@ -550,8 +569,7 @@ class ApiClient(object):
             return
 
         for auth in auth_settings:
-            auth_setting = self.configuration.auth_settings().get(auth)
-            if auth_setting:
+            if auth_setting := self.configuration.auth_settings().get(auth):
                 if auth_setting['in'] == 'cookie':
                     headers['Cookie'] = auth_setting['value']
                 elif auth_setting['in'] == 'header':
@@ -576,10 +594,11 @@ class ApiClient(object):
         os.close(fd)
         os.remove(path)
 
-        content_disposition = response.getheader("Content-Disposition")
-        if content_disposition:
-            filename = re.search(r'filename=[\'"]?([^\'"\s]+)[\'"]?',
-                                 content_disposition).group(1)
+        if content_disposition := response.getheader("Content-Disposition"):
+            filename = re.search(
+                r'filename=[\'"]?([^\'"\s]+)[\'"]?', content_disposition
+            )[1]
+
             path = os.path.join(os.path.dirname(path), filename)
 
         with open(path, "wb") as f:
@@ -653,12 +672,14 @@ class ApiClient(object):
         :param klass: class literal.
         :return: model object.
         """
-        has_discriminator = False
-        if (hasattr(klass, 'get_real_child_model')
-                and klass.discriminator_value_class_map):
-            has_discriminator = True
+        has_discriminator = bool(
+            (
+                hasattr(klass, 'get_real_child_model')
+                and klass.discriminator_value_class_map
+            )
+        )
 
-        if not klass.openapi_types and has_discriminator is False:
+        if not klass.openapi_types and not has_discriminator:
             return data
 
         kwargs = {}
@@ -673,7 +694,6 @@ class ApiClient(object):
         instance = klass(**kwargs)
 
         if has_discriminator:
-            klass_name = instance.get_real_child_model(data)
-            if klass_name:
+            if klass_name := instance.get_real_child_model(data):
                 instance = self.__deserialize(data, klass_name)
         return instance

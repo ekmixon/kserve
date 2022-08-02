@@ -26,12 +26,12 @@ class BertTransformer(kserve.KFModel):
     def __init__(self, name: str, predictor_host: str):
         super().__init__(name)
         self.short_paragraph_text = "The Apollo program was the third United States human spaceflight program. " \
-                                    "First conceived as a three-man spacecraft to follow the one-man Project Mercury " \
-                                    "which put the first Americans in space, Apollo was dedicated to President" \
-                                    " John F. Kennedy's national goal of landing a man on the Moon. The first manned " \
-                                    "flight of Apollo was in 1968. Apollo ran from 1961 to 1972 followed by " \
-                                    "the Apollo-Soyuz Test Project a joint Earth orbit mission with " \
-                                    "the Soviet Union in 1975."
+                                        "First conceived as a three-man spacecraft to follow the one-man Project Mercury " \
+                                        "which put the first Americans in space, Apollo was dedicated to President" \
+                                        " John F. Kennedy's national goal of landing a man on the Moon. The first manned " \
+                                        "flight of Apollo was in 1968. Apollo ran from 1961 to 1972 followed by " \
+                                        "the Apollo-Soyuz Test Project a joint Earth orbit mission with " \
+                                        "the Soviet Union in 1975."
 
         self.predictor_host = predictor_host
         self.tokenizer = tokenization.FullTokenizer(vocab_file="/mnt/models/vocab.txt", do_lower_case=True)
@@ -79,6 +79,6 @@ class BertTransformer(kserve.KFModel):
         max_answer_length = 30
 
         (prediction, nbest_json, scores_diff_json) = \
-            data_processing.get_predictions(self.doc_tokens, self.features, start_logits, end_logits, n_best_size,
+                data_processing.get_predictions(self.doc_tokens, self.features, start_logits, end_logits, n_best_size,
                                             max_answer_length)
         return {"predictions": prediction, "prob": nbest_json[0]['probability'] * 100.0}

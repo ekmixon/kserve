@@ -56,7 +56,9 @@ class RFModel(kserve.KFModel):  # pylint:disable=c-extension-no-member
             logging.info("Calling predict on image of shape %s", (inputs.shape,))
         except Exception as e:
             raise Exception(
-                "Failed to initialize NumPy array from inputs: %s, %s" % (e, instances))
+                f"Failed to initialize NumPy array from inputs: {e}, {instances}"
+            )
+
 
         try:
 
@@ -65,11 +67,11 @@ class RFModel(kserve.KFModel):  # pylint:disable=c-extension-no-member
 
             predictions = self.model.predict_proba(inputs)
 
-            class_preds = [[] for x in range(0, len(predictions[0]))]
-            for j in range(0, len(predictions[0])):
-                for i in range(0, len(predictions)):
+            class_preds = [[] for _ in range(len(predictions[0]))]
+            for j in range(len(predictions[0])):
+                for i in range(len(predictions)):
                     class_preds[j].append(predictions[i][j][1])
 
             return {"predictions": class_preds}
         except Exception as e:
-            raise Exception("Failed to predict: %s" % e)
+            raise Exception(f"Failed to predict: {e}")
